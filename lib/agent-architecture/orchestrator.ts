@@ -2,18 +2,18 @@ import { EmailContext, RowEnrichmentResult } from './core/types';
 import { EnrichmentResult, SearchResult, EnrichmentField } from '../types';
 import { parseEmail } from '../strategies/email-parser';
 import { FirecrawlService } from '../services/firecrawl';
-import { OpenAIService } from '../services/openai';
+import { AnthropicService } from '../services/anthropic';
 
 export class AgentOrchestrator {
   private firecrawl: FirecrawlService;
-  private openai: OpenAIService;
-  
+  private anthropic: AnthropicService;
+
   constructor(
     private firecrawlApiKey: string,
-    private openaiApiKey: string
+    private anthropicApiKey: string
   ) {
     this.firecrawl = new FirecrawlService(firecrawlApiKey);
-    this.openai = new OpenAIService(openaiApiKey);
+    this.anthropic = new AnthropicService(anthropicApiKey);
   }
   
   async enrichRow(
@@ -308,7 +308,7 @@ export class AgentOrchestrator {
     
     for (const field of fields) {
       const name = field.name.toLowerCase();
-      const desc = field.description.toLowerCase();
+      const desc = (field.description || '').toLowerCase();
       
       if (name.includes('company') && name.includes('name') || 
           name.includes('website') || 
@@ -670,14 +670,14 @@ export class AgentOrchestrator {
     if (companyName && typeof companyName === 'string') enrichmentContext.companyName = companyName;
     if (ctxEmailContext?.companyDomain) enrichmentContext.targetDomain = ctxEmailContext.companyDomain;
     
-    const enrichmentResults = typeof this.openai.extractStructuredDataWithCorroboration === 'function'
-      ? await this.openai.extractStructuredDataWithCorroboration(
+    const enrichmentResults = typeof this.anthropic.extractStructuredDataWithCorroboration === 'function'
+      ? await this.anthropic.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
           enrichmentContext,
           onAgentProgress
         )
-      : await this.openai.extractStructuredDataOriginal(
+      : await this.anthropic.extractStructuredDataOriginal(
           combinedContent,
           fields,
           enrichmentContext
@@ -827,14 +827,14 @@ export class AgentOrchestrator {
     if (companyName && typeof companyName === 'string') enrichmentContext.companyName = companyName;
     if (ctxEmailContext?.companyDomain) enrichmentContext.targetDomain = ctxEmailContext.companyDomain;
     
-    const enrichmentResults = typeof this.openai.extractStructuredDataWithCorroboration === 'function'
-      ? await this.openai.extractStructuredDataWithCorroboration(
+    const enrichmentResults = typeof this.anthropic.extractStructuredDataWithCorroboration === 'function'
+      ? await this.anthropic.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
           enrichmentContext,
           onAgentProgress
         )
-      : await this.openai.extractStructuredDataOriginal(
+      : await this.anthropic.extractStructuredDataOriginal(
           combinedContent,
           fields,
           enrichmentContext
@@ -982,14 +982,14 @@ export class AgentOrchestrator {
     if (companyName && typeof companyName === 'string') enrichmentContext.companyName = companyName;
     if (ctxEmailContext?.companyDomain) enrichmentContext.targetDomain = ctxEmailContext.companyDomain;
     
-    const enrichmentResults = typeof this.openai.extractStructuredDataWithCorroboration === 'function'
-      ? await this.openai.extractStructuredDataWithCorroboration(
+    const enrichmentResults = typeof this.anthropic.extractStructuredDataWithCorroboration === 'function'
+      ? await this.anthropic.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
           enrichmentContext,
           onAgentProgress
         )
-      : await this.openai.extractStructuredDataOriginal(
+      : await this.anthropic.extractStructuredDataOriginal(
           combinedContent,
           fields,
           enrichmentContext
@@ -1241,14 +1241,14 @@ export class AgentOrchestrator {
       enrichmentContext.validGithubUrls = githubResults.map(r => r.url).join(', ');
     }
     
-    const enrichmentResults = typeof this.openai.extractStructuredDataWithCorroboration === 'function'
-      ? await this.openai.extractStructuredDataWithCorroboration(
+    const enrichmentResults = typeof this.anthropic.extractStructuredDataWithCorroboration === 'function'
+      ? await this.anthropic.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
           enrichmentContext,
           onAgentProgress
         )
-      : await this.openai.extractStructuredDataOriginal(
+      : await this.anthropic.extractStructuredDataOriginal(
           combinedContent,
           fields,
           enrichmentContext
@@ -1448,14 +1448,14 @@ export class AgentOrchestrator {
       - Only include information that is explicitly stated
       - Do not make assumptions or inferences`;
     
-    const enrichmentResults = typeof this.openai.extractStructuredDataWithCorroboration === 'function'
-      ? await this.openai.extractStructuredDataWithCorroboration(
+    const enrichmentResults = typeof this.anthropic.extractStructuredDataWithCorroboration === 'function'
+      ? await this.anthropic.extractStructuredDataWithCorroboration(
           combinedContent,
           fields,
           enrichmentContext,
           onAgentProgress
         )
-      : await this.openai.extractStructuredDataOriginal(
+      : await this.anthropic.extractStructuredDataOriginal(
           combinedContent,
           fields,
           enrichmentContext
@@ -1533,7 +1533,7 @@ export class AgentOrchestrator {
   
   private isExecutiveField(field: EnrichmentField): boolean {
     const name = field.name.toLowerCase();
-    const desc = field.description.toLowerCase();
+    const desc = (field.description || "").toLowerCase();
     
     const executiveTitles = ['ceo', 'cto', 'cfo', 'coo', 'cmo', 'cpo', 'chief', 'founder', 'president', 'director'];
     
@@ -1542,7 +1542,7 @@ export class AgentOrchestrator {
   
   private extractTitle(field: EnrichmentField): string {
     const name = field.name.toLowerCase();
-    const desc = field.description.toLowerCase();
+    const desc = (field.description || "").toLowerCase();
     
     // Map common variations to standard titles
     if (name.includes('ceo') || desc.includes('chief executive')) return 'CEO';
@@ -2032,7 +2032,7 @@ IMPORTANT: Only extract information that is clearly about the company associated
         }
       });
       
-      const enrichmentResults = await this.openai.extractStructuredDataOriginal(
+      const enrichmentResults = await this.anthropic.extractStructuredDataOriginal(
         fullContent,
         fields,
         stringContext

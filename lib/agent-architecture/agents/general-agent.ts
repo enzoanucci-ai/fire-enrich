@@ -225,7 +225,7 @@ export class GeneralAgent {
   
   private isExecutiveField(field: EnrichmentField): boolean {
     const name = field.name.toLowerCase();
-    const desc = field.description.toLowerCase();
+    const desc = (field.description || "").toLowerCase();
     
     const executiveTitles = ['ceo', 'cto', 'cfo', 'coo', 'cmo', 'cpo', 'chief', 'founder', 'president', 'director'];
     
@@ -234,7 +234,7 @@ export class GeneralAgent {
   
   private extractTitle(field: EnrichmentField): string {
     const name = field.name.toLowerCase();
-    const desc = field.description.toLowerCase();
+    const desc = (field.description || "").toLowerCase();
     
     // Map common variations to standard titles
     if (name.includes('ceo') || desc.includes('chief executive')) return 'CEO';

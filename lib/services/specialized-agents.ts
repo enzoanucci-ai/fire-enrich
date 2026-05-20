@@ -1,17 +1,19 @@
-import { Agent, tool } from '@openai/agents';
+// Note: This file is not currently imported anywhere in the codebase.
+// The orchestrator uses AnthropicService directly for all enrichment.
+// These agent definitions are kept for reference/future use.
 import { z } from 'zod';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import type { EnrichmentField } from '../types';
 
 // Specialized search tool that each agent will use
-const createSpecializedSearchTool = (firecrawl: FirecrawlApp) => tool({
+const createSpecializedSearchTool = (firecrawl: FirecrawlApp) => ({
   name: 'specialized_search',
   description: 'Search with domain-specific queries',
   parameters: z.object({
     queries: z.array(z.string()).describe('Multiple search queries to try'),
     scrapeContent: z.boolean().default(false),
   }),
-  async execute({ queries, scrapeContent }) {
+  async execute({ queries, scrapeContent }: { queries: string[]; scrapeContent: boolean }) {
     const allResults = [];
     
     for (const query of queries) {
@@ -43,7 +45,7 @@ const createSpecializedSearchTool = (firecrawl: FirecrawlApp) => tool({
 
 // Company Information Agent
 export function createCompanyAgent(firecrawl: FirecrawlApp) {
-  return new Agent({
+  return ({
     name: 'Company Research Specialist',
     instructions: `You are an expert at finding company information. You know:
     
@@ -75,7 +77,7 @@ export function createCompanyAgent(firecrawl: FirecrawlApp) {
 
 // Fundraising Intelligence Agent
 export function createFundraisingAgent(firecrawl: FirecrawlApp) {
-  return new Agent({
+  return ({
     name: 'Fundraising Intelligence Specialist',
     instructions: `You are an expert at finding funding and investment information. You know:
     
@@ -107,7 +109,7 @@ export function createFundraisingAgent(firecrawl: FirecrawlApp) {
 
 // People & Leadership Agent
 export function createPeopleAgent(firecrawl: FirecrawlApp) {
-  return new Agent({
+  return ({
     name: 'Executive & People Research Specialist',
     instructions: `You are an expert at finding information about company leadership and key people. You know:
     
@@ -147,7 +149,7 @@ export function createPeopleAgent(firecrawl: FirecrawlApp) {
 
 // Product & Technology Agent
 export function createProductAgent(firecrawl: FirecrawlApp) {
-  return new Agent({
+  return ({
     name: 'Product & Technology Research Specialist',
     instructions: `You are an expert at finding product and technology information. You know:
     
@@ -176,7 +178,7 @@ export function createProductAgent(firecrawl: FirecrawlApp) {
 
 // Contact & Social Media Agent
 export function createContactAgent(firecrawl: FirecrawlApp) {
-  return new Agent({
+  return ({
     name: 'Contact Information Specialist',
     instructions: `You are an expert at finding contact and social media information. You know:
     
@@ -248,7 +250,7 @@ export function createEnrichmentCoordinator(
     agents.push(createCompanyAgent(firecrawl));
   }
 
-  return Agent.create({
+  return ({
     name: 'Enrichment Coordinator',
     instructions: `You coordinate specialized agents to gather information based on the requested fields.
     
@@ -324,7 +326,7 @@ export class SpecializedAgentService {
       try {
         let agentToUse = null;
         const fieldNameLower = field.name.toLowerCase();
-        const fieldDescLower = field.description.toLowerCase();
+        const fieldDescLower = (field.description || "").toLowerCase();
         
         if (fieldNameLower.includes('company') || fieldDescLower.includes('company')) {
           agentToUse = this.getCompanyAgent();
@@ -339,12 +341,9 @@ export class SpecializedAgentService {
         }
         
         if (agentToUse) {
-          const result = await agentToUse.run(`Find ${field.description} for: ${JSON.stringify(context)}`, {
-            apiKey: this.apiKey,
-          });
-          
-          // Extract relevant value from agent output
-          const output = result.finalOutput as Record<string, unknown>;
+          // Note: Agent execution is not implemented for Anthropic in this stub.
+          // The orchestrator uses AnthropicService directly.
+          const output = {} as Record<string, unknown>;
           enrichmentResults[field.name] = {
             value: output[field.name] || output.data || output,
             confidence: 0.8,
